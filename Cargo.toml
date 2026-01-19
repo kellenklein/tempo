@@ -1,8 +1,20 @@
 [package]
 name = "tempo"
-version = "0.1.0"
+version = "0.5.0"
 edition = "2024"
+authors = ["Kellen Klein kellenjklein@gmail.com"]
+license = "MIT"
+description = "A cli metronome application"
+readme = "README.md"
+homepage = "https://github.com/kellenklein/tempo"
+repository = "https://github.com/kellenklein/tempo"
+keywords = ["cli", "metronome"]
+categories = ["command-line-utilities", "multimedia::audio"]
 
 [dependencies]
 clap = { version = "4.0", features = ["derive"] }
 rodio = { version = "0.21.1" }
+tokio = { version = "1.49.0", features = ["time", "full"] }
+mini-redis = { version = "0.4" }
+cpal = { version = "0.17.1" }
+indicatif = { version = "0.18.3" }
