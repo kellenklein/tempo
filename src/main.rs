@@ -1,28 +1,29 @@
 use clap::Parser;
 use std::fs::File;
+use std::num::NonZeroU16;
 use std::ops::RangeInclusive;
 use rodio::{Decoder, source::{Source, LimitSettings}, cpal::BufferSize};
 use tokio::time;
 use std::time::Duration;
 use indicatif::{ProgressBar, ProgressDrawTarget, ProgressStyle};
 
-// A range for the bpm to fall within (all valid u16 values except 0)
-const U16NONZERO: RangeInclusive<usize> = 1..=65535;
+// A range for the bpm to fall within (all valid u8 values up to 100)
+const U8MAX100: RangeInclusive<usize> = 0..=100;
 
 // A function (direct from clap documentation) to parse and limit values for bpm
-fn nonzero(input: &str) -> Result<u16, String> {
+fn max100(input: &str) -> Result<u8, String> {
     // Parse valid input values as integers
     let value: usize = input
         .parse()
         .map_err(|_| format!("{} is not an integer", input))?;
     // A strictly positive u16 returns the Ok result, else format Err
-    if U16NONZERO.contains(&value) {
-        Ok(value as u16)
+    if U8MAX100.contains(&value) {
+        Ok(value as u8)
     } else {
         Err(format!(
-                "bpm not a positive integer from {} to {}",
-                U16NONZERO.start(),
-                U16NONZERO.end()
+                "volume not a positive integer from {} to {}",
+                U8MAX100.start(),
+                U8MAX100.end()
                 ))
     }
 }
@@ -47,12 +48,15 @@ fn valid_path(input: &str) -> Result<String, String> {
 // A struct with the CLI argument data for the metronome tool
 struct Cli {
     // The beats per minute of the metronome (default: 100bpm)
-    #[arg(short, long, default_value_t = 100, value_parser = nonzero)]
-    bpm: u16,
+    #[arg(short, long, default_value_t = NonZeroU16::new(100).unwrap())]
+    bpm: NonZeroU16,
     // Path to audio file to play as metronome (default: audio/sound.wav)
     // Sourced royalty free as Metronome SFX by P4WZ on Sample Focus
     #[arg(short, long, default_value_t = String::from("audio/sound.wav"), value_parser = valid_path)]
-    file: String,    
+    file: String, 
+    // Volume from 0 to 100
+    #[arg(short, long, default_value_t = 5, value_parser = max100)]
+    volume: u8,
 }
 
 //#[tokio::main]
@@ -61,7 +65,7 @@ struct Cli {
     let metronome = Cli::parse();    
 
     // Calculate the time per beat as determined per bpm (in microseconds)
-    let time_per_beat = Duration::from_micros(60_000_000/metronome.bpm as u64);
+    let time_per_beat = Duration::from_micros(60_000_000/(metronome.bpm.get()) as u64);
     
     // Retrieve the device's default output stream with the smallest possible buffer
     let stream_handle = rodio::OutputStreamBuilder::from_default_device()
@@ -84,7 +88,7 @@ struct Cli {
     // Decode the sound file into a source, limiting the volume and sound peaks
     let source = Decoder::try_from(file)
         .expect("input file is valid")
-        .amplify(0.25)
+        .amplify(0.1 * f32::from(metronome.volume))
         .limit(settings);    
 
     // Create a buffered version of the source to repeatedly pull from
