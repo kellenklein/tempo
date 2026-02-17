@@ -7,10 +7,10 @@ use tokio::time;
 use std::time::Duration;
 use indicatif::{ProgressBar, ProgressDrawTarget, ProgressStyle};
 
-// A range for the bpm to fall within (all valid u8 values up to 100)
+// A range for the volume to fall within (all valid u8 values up to 100)
 const U8MAX100: RangeInclusive<usize> = 0..=100;
 
-// A function (direct from clap documentation) to parse and limit values for bpm
+// A function (direct from clap documentation) to parse and limit values for volume
 fn max100(input: &str) -> Result<u8, String> {
     // Parse valid input values as integers
     let value: usize = input
